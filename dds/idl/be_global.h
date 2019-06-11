@@ -157,6 +157,8 @@ public:
   bool suppress_idl() const { return suppress_idl_; }
   bool suppress_typecode() const { return suppress_typecode_; }
 
+  bool generate_itl() const { return generate_itl_; }
+
   static bool writeFile(const char* fileName, const std::string &content);
 
   /**
