@@ -41,8 +41,10 @@ BE_GlobalData::BE_GlobalData()
   , java_(false)
   , suppress_idl_(false)
   , suppress_typecode_(false)
+  , no_default_gen_(false)
   , generate_itl_(false)
-  , v8_(false)
+  , generate_v8_(false)
+  , generate_rapidjson_(false)
   , face_ts_(false)
   , seq_("Seq")
   , language_mapping_(LANGMAP_NONE)
@@ -134,6 +136,16 @@ ACE_CString BE_GlobalData::pch_include() const
   return this->pch_include_;
 }
 
+void BE_GlobalData::add_cpp_include(const std::string& str)
+{
+  this->cpp_includes_.insert(str);
+}
+
+const std::set<std::string>& BE_GlobalData::cpp_includes() const
+{
+  return this->cpp_includes_;
+}
+
 void BE_GlobalData::java_arg(const ACE_CString& str)
 {
   this->java_arg_ = str;
@@ -174,14 +186,44 @@ bool BE_GlobalData::java() const
   return this->java_;
 }
 
+void BE_GlobalData::no_default_gen(bool b)
+{
+  this->no_default_gen_ = b;
+}
+
+bool BE_GlobalData::no_default_gen() const
+{
+  return this->no_default_gen_;
+}
+
+void BE_GlobalData::itl(bool b)
+{
+  this->generate_itl_ = b;
+}
+
+bool BE_GlobalData::itl() const
+{
+  return this->generate_itl_;
+}
+
 void BE_GlobalData::v8(bool b)
 {
-  this->v8_ = b;
+  this->generate_v8_ = b;
 }
 
 bool BE_GlobalData::v8() const
 {
-  return this->v8_;
+  return this->generate_v8_;
+}
+
+void BE_GlobalData::rapidjson(bool b)
+{
+  this->generate_rapidjson_ = b;
+}
+
+bool BE_GlobalData::rapidjson() const
+{
+  return this->generate_rapidjson_;
 }
 
 void BE_GlobalData::face_ts(bool b)
@@ -278,8 +320,9 @@ void invalid_option(char * option)
 void
 BE_GlobalData::parse_args(long& i, char** av)
 {
-  static const char WB_EXPORT_MACRO[] = "--export=";
-  static const size_t SZ_WB_EXPORT_MACRO = sizeof(WB_EXPORT_MACRO) - 1;
+  // This flag is provided for CIAO compatibility
+  static const char EXPORT_FLAG[] = "--export=";
+  static const size_t EXPORT_FLAG_SIZE = sizeof(EXPORT_FLAG) - 1;
 
   static const char DEFAULT_TS_MACRO[] = "--default_nested=";
   static const size_t SZ_DEFAULT_TS_MACRO = sizeof(DEFAULT_TS_MACRO) - 1;
@@ -298,15 +341,21 @@ BE_GlobalData::parse_args(long& i, char** av)
       output_dir_ = av[++i];
     }
     break;
+
   case 'G':
-    if (0 == ACE_OS::strcmp(av[i], "-Gitl"))
-      generate_itl_ = true;
-    else if (0 == ACE_OS::strcasecmp(av[i], "-GfaceTS"))
+    if (0 == ACE_OS::strcmp(av[i], "-Gitl")) {
+      itl(true);
+    } else if (0 == ACE_OS::strcasecmp(av[i], "-GfaceTS")) {
       face_ts(true);
-    else {
+    } else if (0 == ACE_OS::strcasecmp(av[i], "-Gv8")) {
+      be_global->v8(true);
+    } else if (0 == ACE_OS::strcasecmp(av[i], "-Grapidjson")) {
+      be_global->rapidjson(true);
+    } else {
       invalid_option(av[i]);
     }
     break;
+
   case 'L':
     if (0 == ACE_OS::strcasecmp(av[i], "-Lface"))
       language_mapping(LANGMAP_FACE_CXX);
@@ -319,7 +368,12 @@ BE_GlobalData::parse_args(long& i, char** av)
       invalid_option(av[i]);
     }
     break;
+
   case 'S':
+    if (0 == ACE_OS::strcasecmp(av[i], "-Sdefault")) {
+      no_default_gen_ = true;
+      break;
+    }
     if (av[i][2] && av[i][3]) {
       invalid_option(av[i]);
       break;
@@ -338,28 +392,17 @@ BE_GlobalData::parse_args(long& i, char** av)
       invalid_option(av[i]);
     }
     break;
-  case 'Z':
-    if (av[i][2] && av[i][3]) {
-      invalid_option(av[i]);
-      break;
-    }
-    switch (av[i][2]) {
-    case 'C':
-      add_include (av[++i], STREAM_CPP);
-      break;
-    default:
-      invalid_option(av[i]);
-    }
-    break;
+
   case '-':
-    if (0 == ACE_OS::strncasecmp(av[i], WB_EXPORT_MACRO, SZ_WB_EXPORT_MACRO)) {
-      this->export_macro(av[i] + SZ_WB_EXPORT_MACRO);
+    if (0 == ACE_OS::strncasecmp(av[i], EXPORT_FLAG, EXPORT_FLAG_SIZE)) {
+      this->export_macro(av[i] + EXPORT_FLAG_SIZE);
     } else if (0 == ACE_OS::strncasecmp(av[i], DEFAULT_TS_MACRO, SZ_DEFAULT_TS_MACRO)) {
       istringstream(av[i] + SZ_DEFAULT_TS_MACRO) >> std::boolalpha >> default_nested_;
     } else {
       invalid_option(av[i]);
     }
     break;
+
   default:
     invalid_option(av[i]);
   }
@@ -559,6 +602,7 @@ BE_GlobalData::get_include_block(BE_GlobalData::stream_enum_t which)
     break;
 
   case STREAM_CPP:
+    std::for_each(cpp_includes().begin(), cpp_includes().end(), InsertIncludes(ret));
     std::for_each(referenced_idl_.begin(), referenced_idl_.end(),
                   InsertRefIncludes(ret, "TypeSupportImpl.h"));
     break;
@@ -598,7 +642,7 @@ BE_GlobalData::cache_annotations()
  */
 bool BE_GlobalData::treat_as_topic(AST_Decl *node)
 {
-  return is_topic_type(node) || !is_default_nested(node);
+  return is_topic_type(node) || !is_default_nested(node) || !is_nested_type(node);
 }
 
 /**
@@ -668,9 +712,9 @@ BE_GlobalData::is_nested_type(AST_Decl* node)
   ///foolishly assuming that if we will call both in sucession.
   bool isTopic = is_topic_type(node);
 
-  bool rv = false;
+  bool rv = true;
 
-  AST_Annotation_Appl *nested_apply = nullptr;
+  AST_Annotation_Appl *nested_apply = NULL;
   if (node) {
     if (node->node_type() == AST_Decl::NT_struct) {
       nested_apply = node->annotations().find(nested_annotation_);
