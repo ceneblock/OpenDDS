@@ -642,7 +642,7 @@ BE_GlobalData::cache_annotations()
  */
 bool BE_GlobalData::treat_as_topic(AST_Decl *node)
 {
-  return is_topic_type(node) || !is_default_nested(node) || !is_nested_type(node);
+  return is_topic_type(node) || !is_nested_type(node);
 }
 
 /**
@@ -656,14 +656,20 @@ bool BE_GlobalData::treat_as_topic(AST_Decl *node)
 bool
 BE_GlobalData::is_default_nested(AST_Decl* node)
 {
-   AST_Annotation_Appl *default_nested_apply = dynamic_cast<AST_Decl *>(node -> defined_in()) -> annotations().find("::@default_nested");
+  if(node->defined_in()){
 
-  if(default_nested_apply)
-  {
-    bool default_nested_apply_value = AST_Annotation_Member::narrow_from_decl ((*default_nested_apply)["value"]) -> value ()->ev ()->u.bval;
+    ///recurse to the top
+    bool default_nested_apply_value = is_default_nested(dynamic_cast<AST_Decl *>(node -> defined_in()));
+
+    ///check if we have a default value
+    AST_Annotation_Appl *default_nested_apply = dynamic_cast<AST_Decl *>(node -> defined_in()) -> annotations().find("::@default_nested");
+
+    ///if we have a default value, then overwrite the parent's.
+    if(default_nested_apply){
+      default_nested_apply_value = AST_Annotation_Member::narrow_from_decl ((*default_nested_apply)["value"]) -> value ()->ev ()->u.bval;
+    }
     return default_nested_apply_value;
   }
-
   return default_nested_;
 }
 
@@ -712,7 +718,8 @@ BE_GlobalData::is_nested_type(AST_Decl* node)
   ///foolishly assuming that if we will call both in sucession.
   bool isTopic = is_topic_type(node);
 
-  bool rv = true;
+  ///figure out what the default value is.
+  bool rv = is_default_nested(node);
 
   AST_Annotation_Appl *nested_apply = NULL;
   if (node) {
@@ -732,6 +739,7 @@ BE_GlobalData::is_nested_type(AST_Decl* node)
     idl_global->err()->misc_warning("Mixing of @topic and @nested annotation is discouraged", node);
   }
 
+  ///overwrite the default value if present.
   if(nested_apply) {
     rv = AST_Annotation_Member::narrow_from_decl ((*nested_apply)["value"]) -> value ()->ev ()->u.bval;
   }
