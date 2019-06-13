@@ -1,0 +1,56 @@
+
+project(DDS*Anonymous_idl): dcps_test_lib {
+  idlflags      += -Wb,stub_export_include=Anonymous_export.h \
+                   -Wb,stub_export_macro=Anonymous_Export -SS
+  dcps_ts_flags += -Wb,export_macro=Anonymous_Export
+  dynamicflags  += MESSENGER_BUILD_DLL
+
+  TypeSupport_Files {
+    Anonymous.idl
+  }
+}
+
+project(DDS*Anonymous_Publisher): dcpsexe, dcps_transports_for_test, optional_security {
+
+  exename   = publisher
+  after    += DDS*idl
+  libs     += DDS*Anonymous_idl
+
+  Idl_Files {
+  }
+
+  Source_Files {
+    publisher.cpp
+    Writer.cpp
+  }
+}
+
+project(DDS*Anonymous_Subscriber): dcpsexe, dcps_transports_for_test, optional_security {
+
+  exename   = subscriber
+  after    += DDS*idl
+  libs     += DDS*Anonymous_idl
+
+  Idl_Files {
+  }
+
+  Source_Files {
+    subscriber.cpp
+    DataReaderListener.cpp
+  }
+}
+
+project(DDS*Anonymous_StackSubscriber) : dcpsexe, dcps_transports_for_test {
+
+  exename   = stack_subscriber
+  after    += DDS*idl
+  libs     += DDS*Anonymous_idl
+
+  Idl_Files {
+  }
+
+  Source_Files {
+    stack_subscriber.cpp
+    DataReaderListener.cpp
+  }
+}
