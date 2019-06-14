@@ -291,7 +291,7 @@ bool itl_generator::gen_struct(AST_Structure* node, UTL_ScopedName*,
                                const std::vector<AST_Field*>& fields,
                                AST_Type::SIZE_TYPE, const char* repoid)
 {
-  if (!be_global->generate_itl())
+  if (!be_global->itl())
     return true;
 
   bool is_topic_type =

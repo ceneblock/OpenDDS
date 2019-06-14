@@ -16,6 +16,8 @@
 #include "utl_string.h"
 #include "ast_enum_val.h"
 
+#include "ast_annotation_member.h"
+
 #include <string>
 #include <sstream>
 #include <set>
@@ -157,8 +159,6 @@ public:
   bool suppress_idl() const { return suppress_idl_; }
   bool suppress_typecode() const { return suppress_typecode_; }
 
-  bool generate_itl() const { return generate_itl_; }
-
   static bool writeFile(const char* fileName, const std::string &content);
 
   /**
@@ -203,10 +203,12 @@ private:
   // Name of the IDL file we are processing.
 
   bool java_, suppress_idl_, suppress_typecode_,
-    no_default_gen_, generate_itl_, generate_v8_, generate_rapidjson_, face_ts_;
+    no_default_gen_, generate_itl_, generate_v8_,
+    generate_rapidjson_, face_ts_;
 
-  ACE_CString export_macro_, export_include_, versioning_name_,
-    versioning_begin_, versioning_end_, pch_include_, java_arg_, seq_;
+  ACE_CString export_macro_, export_include_,
+    versioning_name_, versioning_begin_, versioning_end_,
+    pch_include_, java_arg_, seq_;
   std::set<std::string> cpp_includes_;
 
   LanguageMapping language_mapping_;
