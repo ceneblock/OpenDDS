@@ -1894,6 +1894,37 @@ bool langmap_generator::gen_array(AST_Array*, UTL_ScopedName* name, AST_Type* ba
   return true;
 }
 
+bool langmap_generator::gen_sequence(AST_Sequence*, UTL_ScopedName* name, AST_Type* base,
+                                    const char*)
+{
+  AST_Array* arr = 0;
+  {
+    const ScopedNamespaceGuard namespaces(name, be_global->lang_header_);
+    const char* const nm = name->last_component()->get_string();
+
+    switch (base->node_type()) {
+    case AST_Decl::NT_sequence:
+      generator_->gen_sequence(name, AST_Sequence::narrow_from_decl(base));
+      break;
+    default:
+      be_global->lang_header_ <<
+        "typedef " << generator_->map_type(base) << ' ' << nm << ";\n";
+      generator_->gen_typedef_varout(nm, base);
+
+      AST_Type* actual_base = resolveActualType(base);
+      if (actual_base->node_type() == AST_Decl::NT_array) {
+        generator_->gen_array_typedef(nm, base);
+      }
+
+      break;
+    }
+
+    gen_typecode(name);
+  }
+  if (arr) generator_->gen_array_traits(name, arr);
+  return true;
+}
+
 bool langmap_generator::gen_union_fwd(AST_UnionFwd* node,
                                       UTL_ScopedName* name,
                                       AST_Type::SIZE_TYPE)

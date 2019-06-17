@@ -22,6 +22,9 @@ public:
   bool gen_array(AST_Array*, UTL_ScopedName*, AST_Type*, const char*)
   { return true; }
 
+  bool gen_sequence(AST_Sequence*, UTL_ScopedName*, AST_Type*, const char*)
+  { return true; }
+
   bool gen_union(AST_Union* node, UTL_ScopedName* name, const std::vector<AST_UnionBranch*>&,
                  AST_Type*, const char*);
 };

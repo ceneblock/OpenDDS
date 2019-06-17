@@ -621,6 +621,61 @@ bool rapidjson_generator::gen_array(AST_Array*, UTL_ScopedName* name,
   return true;
 }
 
+bool rapidjson_generator::gen_sequence(AST_Sequence*, UTL_ScopedName* name,
+                               AST_Type* type, const char* /*repoid*/)
+{
+  gen_includes();
+  switch (type->node_type()) {
+  case AST_Decl::NT_sequence: {
+    NamespaceGuard ng;
+    AST_Sequence* seq = AST_Sequence::narrow_from_decl(type);
+    const std::string cxx = scoped(name);
+    AST_Type* elem = seq->base_type();
+    {
+      Function ctv("copyToRapidJson", "void");
+      ctv.addArg("src", "const " + cxx + '&');
+      ctv.addArg("dst", "rapidjson::Value&");
+      ctv.addArg("alloc", "rapidjson::Value::AllocatorType&");
+      ctv.endArgs();
+      be_global->impl_ <<
+        "  dst.SetArray();\n"
+        "  dst.GetArray().Reserve(src.length(), alloc);\n"
+        "  for (CORBA::ULong i = 0; i < dst.Size(); ++i) {\n"
+        "    ";
+      gen_copyto("dst", "alloc", "src[i]", elem, "i", true);
+      be_global->impl_ <<
+        "  }\n"
+        "  for (CORBA::ULong i = dst.Size(); i < src.length(); ++i) {\n"
+        "    ";
+      gen_copyto("dst", "alloc", "src[i]", elem, "i", true, true);
+      be_global->impl_ <<
+        "  }\n";
+    }
+    {
+      Function vtc("copyFromRapidJson", "void");
+      vtc.addArg("src", "const rapidjson::Value&");
+      vtc.addArg("out", cxx + '&');
+      vtc.endArgs();
+      be_global->impl_ <<
+        "  CORBA::ULong length = 0;\n"
+        "  if (src.IsArray()) {\n"
+        "    length = src.GetArray().Size();\n"
+        "  }\n"
+        "  out.length(length);\n"
+        "  for (CORBA::ULong i = 0; i < length; ++i) {\n"
+        "  ";
+      gen_copyfrom("out", "src", elem, "i", true);
+      be_global->impl_ <<
+        "  }\n";
+    }
+    break;
+  }
+  default:
+    return true;
+  }
+  return true;
+}
+
 namespace {
   std::string branchGenTo(const std::string& name, AST_Type* type,
                           const std::string&, std::string&,

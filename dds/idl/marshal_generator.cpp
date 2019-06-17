@@ -1137,7 +1137,7 @@ bool marshal_generator::gen_typedef(AST_Typedef*, UTL_ScopedName* name, AST_Type
 {
   switch (base->node_type()) {
   case AST_Decl::NT_sequence:
-    gen_sequence(name, AST_Sequence::narrow_from_decl(base));
+    ::gen_sequence(name, AST_Sequence::narrow_from_decl(base));
     break;
   case AST_Decl::NT_array:
     ::gen_array(name, AST_Array::narrow_from_decl(base));
@@ -1154,6 +1154,19 @@ bool marshal_generator::gen_array(AST_Array*, UTL_ScopedName* name, AST_Type* ba
   switch (base->node_type()) {
   case AST_Decl::NT_array:
     ::gen_array(name, AST_Array::narrow_from_decl(base));
+    break;
+  default:
+    return true;
+  }
+  return true;
+}
+
+bool marshal_generator::gen_sequence(AST_Sequence*, UTL_ScopedName* name, AST_Type* base,
+  const char*)
+{
+  switch (base->node_type()) {
+  case AST_Decl::NT_sequence:
+    ::gen_sequence(name, AST_Sequence::narrow_from_decl(base));
     break;
   default:
     return true;

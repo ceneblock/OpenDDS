@@ -224,6 +224,9 @@ bool itl_generator::gen_typedef(AST_Typedef*, UTL_ScopedName* /*name*/,
     }
   case AST_Decl::NT_array:
     {
+      return itl_generator::gen_array(NULL, NULL, base, repoid);
+
+      /**
       AST_Array* arr = AST_Array::narrow_from_decl(base);
       be_global->itl_ << Open(this)
                       << Indent(this) << "{\n"
@@ -251,6 +254,7 @@ bool itl_generator::gen_typedef(AST_Typedef*, UTL_ScopedName* /*name*/,
                       << Indent(this) << "}\n"
                       << Close(this);
       break;
+      */
     }
   case AST_Decl::NT_fixed:
     {
@@ -316,6 +320,58 @@ bool itl_generator::gen_array(AST_Array*, UTL_ScopedName* /*name*/,
         be_global->itl_ << arr->dims()[i]->ev()->u.ulval;
       }
       be_global->itl_ << "]\n"
+                      << Close(this)
+                      << Indent(this) << "}\n"
+                      << Close(this)
+                      << Close(this)
+                      << Indent(this) << "}\n"
+                      << Close(this);
+      break;
+    }
+  default:
+    {
+      ///How did we get here?
+      ///We shouldn't get here, let's return false.
+      be_global->itl_ << Open(this)
+                      << Indent(this) << "{\n"
+                      << Open(this)
+                      << Indent(this) << "\"kind\" : \"alias\",\n"
+                      << Indent(this) << "\"name\" : \"" << repoid << "\",\n"
+                      << Indent(this) << "\"type\" : " << InlineType(base) << "\n"
+                      << Close(this)
+                      << Indent(this) << "}\n"
+                      << Close(this);
+
+      return false;
+    }
+  }
+  return true;
+}
+
+bool itl_generator::gen_sequence(AST_Sequence *, UTL_ScopedName* /*name*/,
+                                AST_Type* base,
+                                const char* repoid)
+{
+  new_type();
+
+  switch (base->node_type()) {
+  case AST_Decl::NT_sequence:
+    {
+      AST_Sequence *seq = AST_Sequence::narrow_from_decl(base);
+      be_global->itl_ << Open(this)
+                      << Indent(this) << "{\n"
+                      << Open(this)
+                      << Indent(this) << "\"kind\" : \"alias\",\n"
+                      << Indent(this) << "\"name\" : \"" << repoid << "\",\n"
+                      << Indent(this) << "\"type\" :\n"
+                      << Open(this)
+                      << Indent(this) << "{\n"
+                      << Open(this)
+                      << Indent(this) << "\"kind\" : \"sequence\",\n";
+      if (!seq->unbounded()) {
+        be_global->itl_ << Indent(this) << "\"capacity\" : " << seq->max_size()->ev()->u.ulval << ",\n";
+      }
+      be_global->itl_ << Indent(this) << "\"type\" : " << InlineType(seq->base_type()) << "\n"
                       << Close(this)
                       << Indent(this) << "}\n"
                       << Close(this)

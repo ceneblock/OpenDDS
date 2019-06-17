@@ -23,6 +23,8 @@ public:
 
   bool gen_array(AST_Array* node, UTL_ScopedName* name, AST_Type* base, const char* repoid);
 
+  bool gen_sequence(AST_Sequence* node, UTL_ScopedName* name, AST_Type* base, const char* repoid);
+
   bool gen_union(AST_Union* node, UTL_ScopedName* name,
                  const std::vector<AST_UnionBranch*>& branches,
                  AST_Type* discriminator,

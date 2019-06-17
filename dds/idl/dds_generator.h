@@ -64,6 +64,9 @@ public:
   virtual bool gen_array(AST_Array* node, UTL_ScopedName* name, AST_Type* base,
                            const char* repoid) = 0;
 
+  virtual bool gen_sequence(AST_Sequence* node, UTL_ScopedName* name, AST_Type* base,
+                           const char* repoid) = 0;
+
   virtual bool gen_interf(AST_Interface* /*node*/, UTL_ScopedName* /*name*/, bool /*local*/,
                           const std::vector<AST_Interface*>& /*inherits*/,
                           const std::vector<AST_Interface*>& /*inherits_flat*/,
@@ -112,6 +115,8 @@ public:
   bool gen_typedef(AST_Typedef* node, UTL_ScopedName* name, AST_Type* base, const char* repoid);
 
   bool gen_array(AST_Array* node, UTL_ScopedName* name, AST_Type* base, const char* repoid);
+
+  bool gen_sequence(AST_Sequence* node, UTL_ScopedName* name, AST_Type* base, const char* repoid);
 
   bool gen_interf(AST_Interface* node, UTL_ScopedName* name, bool local,
                   const std::vector<AST_Interface*>& inherits,

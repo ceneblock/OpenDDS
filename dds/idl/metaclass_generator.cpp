@@ -760,6 +760,93 @@ metaclass_generator::gen_array(AST_Array*, UTL_ScopedName* name, AST_Type* type,
   return true;
 }
 
+bool
+metaclass_generator::gen_sequence(AST_Sequence*, UTL_ScopedName* name, AST_Type* type, const char*)
+{
+  AST_Array* arr = AST_Array::narrow_from_decl(type);
+  AST_Sequence* seq = 0;
+  if (!arr && !(seq = AST_Sequence::narrow_from_decl(type))) {
+    return true;
+  }
+  const bool use_cxx11 = be_global->language_mapping() == BE_GlobalData::LANGMAP_CXX11;
+
+  const std::string clazz = scoped(name), clazz_underscores = scoped_helper(name, "_");
+  ContentSubscriptionGuard csg;
+  NamespaceGuard ng;
+  Function f("gen_skip_over", "bool");
+  f.addArg("ser", "Serializer&");
+  if (use_cxx11) {
+    f.addArg("", "IDL::DistinctType<" + clazz + ", " + clazz_underscores + "_tag>*");
+  } else {
+    f.addArg("", clazz + (arr ? "_forany*" : "*"));
+  }
+  f.endArgs();
+
+  std::string len;
+  AST_Type* elem;
+
+  if (arr) {
+    elem = arr->base_type();
+    size_t n_elems = 1;
+    for (size_t i = 0; i < arr->n_dims(); ++i) {
+      n_elems *= arr->dims()[i]->ev()->u.ulval;
+    }
+    std::ostringstream strstream;
+    strstream << n_elems;
+    len = strstream.str();
+  } else { // Sequence
+    elem = seq->base_type();
+    be_global->impl_ <<
+      "  ACE_CDR::ULong length;\n"
+      "  if (!(ser >> length)) return false;\n";
+    len = "length";
+  }
+
+  const std::string cxx_elem = scoped(elem->name());
+  AST_Type* elem_orig = elem;
+  elem = resolveActualType(elem);
+  const Classification elem_cls = classify(elem);
+
+  if ((elem_cls & (CL_PRIMITIVE | CL_ENUM)) && !(elem_cls & CL_WIDE)) {
+    // fixed-length sequence/array element -> skip all elements at once
+    int sz = 1;
+    to_cxx_type(elem, sz);
+    be_global->impl_ <<
+      "  return ser.skip(static_cast<ACE_UINT16>(" << len << "), " << sz << ");\n";
+  } else {
+    be_global->impl_ <<
+      "  for (ACE_CDR::ULong i = 0; i < " << len << "; ++i) {\n";
+    if ((elem_cls & CL_PRIMITIVE) && (elem_cls & CL_WIDE)) {
+      be_global->impl_ <<
+        "    ACE_CDR::Octet o;\n"
+        "    if (!(ser >> ACE_InputCDR::to_octet(o))) return false;\n"
+        "    if (!ser.skip(o)) return false;\n";
+    } else if (elem_cls & CL_STRING) {
+      be_global->impl_ <<
+        "    ACE_CDR::ULong strlength;\n"
+        "    if (!(ser >> strlength)) return false;\n"
+        "    if (!ser.skip(static_cast<ACE_UINT16>(strlength))) return false;\n";
+    } else if (elem_cls & (CL_ARRAY | CL_SEQUENCE | CL_STRUCTURE)) {
+      std::string pre, post;
+      if (!use_cxx11 && (elem_cls & CL_ARRAY)) {
+        post = "_forany";
+      } else if (use_cxx11 && (elem_cls & (CL_ARRAY | CL_SEQUENCE))) {
+        pre = "IDL::DistinctType<";
+        post = ", " + dds_generator::scoped_helper(elem_orig->name(), "_") + "_tag>";
+      }
+      be_global->impl_ <<
+        "    if (!gen_skip_over(ser, static_cast<" << pre << cxx_elem << post
+        << "*>(0))) return false;\n";
+    }
+    be_global->impl_ <<
+      "  }\n";
+    be_global->impl_ <<
+      "  return true;\n";
+  }
+
+  return true;
+}
+
 static std::string func(const std::string&,
                         AST_Type* br_type,
                         const std::string&,

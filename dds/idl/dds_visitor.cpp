@@ -269,22 +269,26 @@ dds_visitor::visit_structure(AST_Structure* node)
     AST_Field** f;
     node->field(f, i);
 
-    //AST_Type *ct = AST_Type::narrow_from_decl (d);
-    if(*f) {
-      AST_Decl::NodeType nt = f[0] -> field_type()->node_type();
-      if(nt == AST_Decl::NT_array) {
+    if(idl_global -> idl_version_ >= IDL_VERSION_4) {
+
+      //AST_Type *ct = AST_Type::narrow_from_decl (d);
+      if(*f) {
+        AST_Decl::NodeType nt = f[0] -> field_type()->node_type();
+        if(nt == AST_Decl::NT_array) {
 
 
-        AST_Array *arr = dynamic_cast<AST_Array*>(f[i]->field_type());
-        if(arr) {
-          visit_array(arr);
+          AST_Array *arr = dynamic_cast<AST_Array*>(f[i]->field_type());
+          if(arr) {
+            visit_array(arr);
+          }
+          continue; ///just skip over it for now.
         }
-        continue; ///just skip over it for now.
       }
-    if (!field_check_anon(*f, "struct", name)) {
-      error_ = true;
-      return -1;
-    }
+    } else {
+      if (!field_check_anon(*f, "struct", name)) {
+        error_ = true;
+        return -1;
+      }
     }
     fields.push_back(*f);
   }
@@ -462,11 +466,40 @@ dds_visitor::visit_union(AST_Union* node)
 // *** All methods below here are unimplemented (or trivially implemented) ***
 
 int
-dds_visitor::visit_sequence(AST_Sequence*)
+dds_visitor::visit_sequence(AST_Sequence* node)
 {
-  //sequences always appear as typedefs, see visit_typedef ()
+  const char* name = node->local_name()->get_string();
+
+  BE_Comment_Guard g("SEQUENCE", name);
+
+  ACE_UNUSED_ARG(g);
+
+  if (!java_ts_only_) {
+    error_ |= !gen_target_.gen_sequence(node, node->name(), node->base_type(),
+                                        node->repoID());
+  }
+
   return 0;
 }
+
+int
+dds_visitor::visit_array(AST_Array* node)
+{
+  const char* name = node->local_name()->get_string();
+
+  BE_Comment_Guard g("ARRAY", name);
+
+  ACE_UNUSED_ARG(g);
+
+  if (!java_ts_only_) {
+    error_ |= !gen_target_.gen_array(node, node->name(), node->base_type(),
+                                       node->repoID());
+  }
+
+  return 0;
+}
+
+// *** All methods below here are unimplemented (or trivially implemented) ***
 
 int
 dds_visitor::visit_operation(AST_Operation*)
@@ -486,23 +519,6 @@ int
 dds_visitor::visit_attribute(AST_Attribute*)
 {
   // attributes are taken care of by visit_interface ()
-  return 0;
-}
-
-int
-dds_visitor::visit_array(AST_Array* node)
-{
-  const char* name = node->local_name()->get_string();
-
-  BE_Comment_Guard g("ARRAY", name);
-
-  ACE_UNUSED_ARG(g);
-
-  if (!java_ts_only_) {
-    error_ |= !gen_target_.gen_array(node, node->name(), node->base_type(),
-                                       node->repoID());
-  }
-
   return 0;
 }
 
