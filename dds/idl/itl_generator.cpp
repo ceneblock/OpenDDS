@@ -287,6 +287,63 @@ bool itl_generator::gen_typedef(AST_Typedef*, UTL_ScopedName* /*name*/,
   return true;
 }
 
+bool itl_generator::gen_array(AST_Array*, UTL_ScopedName* /*name*/,
+                                AST_Type* base,
+                                const char* repoid)
+{
+  new_type();
+
+  switch (base->node_type()) {
+  case AST_Decl::NT_array:
+    {
+      AST_Array* arr = AST_Array::narrow_from_decl(base);
+      be_global->itl_ << Open(this)
+                      << Indent(this) << "{\n"
+                      << Open(this)
+                      << Indent(this) << "\"kind\" : \"alias\",\n"
+                      << Indent(this) << "\"name\" : \"" << repoid << "\",\n"
+                      << Indent(this) << "\"type\" :\n"
+                      << Open(this)
+                      << Indent(this) << "{\n"
+                      << Open(this)
+                      << Indent(this) << "\"kind\" : \"sequence\",\n"
+                      << Indent(this) << "\"type\" : " << InlineType(arr->base_type()) << ",\n"
+                      << Indent(this) << "\"size\" : [";
+      ACE_CDR::ULong dims = arr->n_dims();
+      for (size_t i = 0; i < dims; ++i) {
+        if (i > 0)
+          be_global->itl_ << ", ";
+        be_global->itl_ << arr->dims()[i]->ev()->u.ulval;
+      }
+      be_global->itl_ << "]\n"
+                      << Close(this)
+                      << Indent(this) << "}\n"
+                      << Close(this)
+                      << Close(this)
+                      << Indent(this) << "}\n"
+                      << Close(this);
+      break;
+    }
+  default:
+    {
+      ///How did we get here?
+      ///We shouldn't get here, let's return false.
+      be_global->itl_ << Open(this)
+                      << Indent(this) << "{\n"
+                      << Open(this)
+                      << Indent(this) << "\"kind\" : \"alias\",\n"
+                      << Indent(this) << "\"name\" : \"" << repoid << "\",\n"
+                      << Indent(this) << "\"type\" : " << InlineType(base) << "\n"
+                      << Close(this)
+                      << Indent(this) << "}\n"
+                      << Close(this);
+
+      return false;
+    }
+  }
+  return true;
+}
+
 bool itl_generator::gen_struct(AST_Structure* node, UTL_ScopedName*,
                                const std::vector<AST_Field*>& fields,
                                AST_Type::SIZE_TYPE, const char* repoid)

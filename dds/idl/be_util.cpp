@@ -92,6 +92,9 @@ be_util::prep_be_arg (char *arg)
 void
 be_util::arg_post_proc (void)
 {
+  if(idl_global -> idl_version_ >= IDL_VERSION_4) {
+    idl_global->anon_type_diagnostic(IDL_GlobalData::ANON_TYPE_SILENT);
+  }
 }
 
 void

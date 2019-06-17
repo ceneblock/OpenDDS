@@ -130,6 +130,19 @@ bool composite_generator::gen_typedef(AST_Typedef* node, UTL_ScopedName* name, A
   return true;
 }
 
+bool composite_generator::gen_array(AST_Array* node, UTL_ScopedName* name, AST_Type* base,
+                                      const char* repoid)
+{
+  for (vector<dds_generator*>::iterator it(components_.begin());
+       it != components_.end(); ++it) {
+    if (!node->imported() || (*it)->do_included_files())
+      if (!(*it)->gen_array(node, name, base, repoid))
+        return false;
+  }
+
+  return true;
+}
+
 bool composite_generator::gen_interf(AST_Interface* node, UTL_ScopedName* name, bool local,
   const std::vector<AST_Interface*>& inherits,
   const std::vector<AST_Interface*>& inh_flat,

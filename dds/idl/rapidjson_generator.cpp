@@ -564,6 +564,63 @@ bool rapidjson_generator::gen_typedef(AST_Typedef*, UTL_ScopedName* name,
   return true;
 }
 
+bool rapidjson_generator::gen_array(AST_Array*, UTL_ScopedName* name,
+                               AST_Type* type, const char* /*repoid*/)
+{
+  gen_includes();
+  switch (type->node_type()) {
+  case AST_Decl::NT_array: {
+    NamespaceGuard ng;
+    AST_Array* array = AST_Array::narrow_from_decl(type);
+    const std::string cxx = scoped(name);
+    AST_Type* elem = array->base_type();
+    {
+      Function ctv("copyToRapidJson", "void");
+      ctv.addArg("src", "const " + cxx + '&');
+      ctv.addArg("dst", "rapidjson::Value&");
+      ctv.addArg("alloc", "rapidjson::Value::AllocatorType&");
+      ctv.endArgs();
+      be_global->impl_ <<
+        "  CORBA::ULong length = sizeof(src) / sizeof(src[0]);\n"
+        "  dst.SetArray();\n"
+        "  dst.GetArray().Reserve(length, alloc);\n"
+        "  for (CORBA::ULong i = 0; i < dst.Size(); ++i) {\n"
+        "  ";
+      gen_copyto("dst", "alloc", "src[i]", elem, "i", true);
+      be_global->impl_ <<
+        "  }\n"
+        "  for (CORBA::ULong i = dst.Size(); i < length; ++i) {\n"
+        "    ";
+      gen_copyto("dst", "alloc", "src[i]", elem, "i", true, true);
+      be_global->impl_ <<
+        "  }\n";
+    }
+    {
+      Function vtc("copyFromRapidJson", "void");
+      vtc.addArg("src", "const rapidjson::Value&");
+      vtc.addArg("out", cxx + '&');
+      vtc.endArgs();
+      be_global->impl_ <<
+        "  CORBA::ULong length = 0;\n"
+        "  if (src.IsArray()) {\n"
+        "    CORBA::ULong src_length = src.GetArray().Size();\n"
+        "    CORBA::ULong out_length = (sizeof(out) / sizeof(out[0]));\n"
+        "    length = (src_length <= out_length) ? src_length : out_length;\n"
+        "  }\n"
+        "  for (CORBA::ULong i = 0; i < length; ++i) {\n"
+        "  ";
+      gen_copyfrom("out", "src", elem, "i", true);
+      be_global->impl_ <<
+        "  }\n";
+    }
+    break;
+  }
+  default:
+    return true;
+  }
+  return true;
+}
+
 namespace {
   std::string branchGenTo(const std::string& name, AST_Type* type,
                           const std::string&, std::string&,

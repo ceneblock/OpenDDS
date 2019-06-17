@@ -46,7 +46,7 @@
 #include <iostream>
 #include <vector>
 #include <fstream>
-
+#include <algorithm>
 using namespace std;
 
 namespace {
@@ -77,10 +77,28 @@ namespace {
   bool field_check_anon(AST_Field* f, const char* ct, const char* cn)
   {
     AST_Decl::NodeType nt = f->field_type()->node_type();
-    if (nt == AST_Decl::NT_array || nt == AST_Decl::NT_sequence) {
-      idl_global->err()->misc_error("field has an anonymous type.", f);
-      return false;
+
+    ///I'll need this...
+    std::string repoID = f->repoID();
+    std::size_t first_colon = repoID.find(":");
+    std::size_t second_colon = repoID.find(":", first_colon + 1);
+    std::string newRepoID;
+    if(first_colon == std::string::npos || second_colon == std::string::npos) {
+      ///Generate a random ID
+      newRepoID = "CHANGE_ME";
+    } else {
+      std::string newRepoID = repoID.substr(first_colon + 1, (second_colon - first_colon - 1));
+      std::replace(newRepoID.begin(), newRepoID.end(), '/', '_');
     }
+
+    ///silence errors for non-anon types
+    ///@TODO: uncomment the below
+    ///if(idl_global -> idl_version_ < IDL_VERSION_4) {
+      if (nt == AST_Decl::NT_array || nt == AST_Decl::NT_sequence) {
+        idl_global->err()->misc_error("field has an anonymous type.", f);
+        return false;
+      }
+    ///}
     return true;
   }
 } // namespace
@@ -250,9 +268,23 @@ dds_visitor::visit_structure(AST_Structure* node)
   for (CORBA::ULong i = 0; i < nfields; ++i) {
     AST_Field** f;
     node->field(f, i);
+
+    //AST_Type *ct = AST_Type::narrow_from_decl (d);
+    if(*f) {
+      AST_Decl::NodeType nt = f[0] -> field_type()->node_type();
+      if(nt == AST_Decl::NT_array) {
+
+
+        AST_Array *arr = dynamic_cast<AST_Array*>(f[i]->field_type());
+        if(arr) {
+          visit_array(arr);
+        }
+        continue; ///just skip over it for now.
+      }
     if (!field_check_anon(*f, "struct", name)) {
       error_ = true;
       return -1;
+    }
     }
     fields.push_back(*f);
   }
@@ -458,9 +490,19 @@ dds_visitor::visit_attribute(AST_Attribute*)
 }
 
 int
-dds_visitor::visit_array(AST_Array*)
+dds_visitor::visit_array(AST_Array* node)
 {
-  //arrays always appear as typedefs, see visit_typedef ()
+  const char* name = node->local_name()->get_string();
+
+  BE_Comment_Guard g("ARRAY", name);
+
+  ACE_UNUSED_ARG(g);
+
+  if (!java_ts_only_) {
+    error_ |= !gen_target_.gen_array(node, node->name(), node->base_type(),
+                                       node->repoID());
+  }
+
   return 0;
 }
 

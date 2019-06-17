@@ -32,6 +32,8 @@ public:
 
   bool gen_typedef(AST_Typedef*, UTL_ScopedName*, AST_Type*, const char*);
 
+  bool gen_array(AST_Array*, UTL_ScopedName*, AST_Type*, const char*);
+
   bool gen_union(AST_Union*, UTL_ScopedName*, const std::vector<AST_UnionBranch*>&,
                  AST_Type*, const char*);
 
