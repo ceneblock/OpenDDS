@@ -476,9 +476,11 @@ bool v8_generator::gen_struct(AST_Structure* node, UTL_ScopedName* name,
 bool v8_generator::gen_typedef(AST_Typedef*, UTL_ScopedName* name,
                                AST_Type* type, const char* /*repoid*/)
 {
-  gen_includes();
   switch (type->node_type()) {
   case AST_Decl::NT_sequence: {
+    return v8_generator::gen_sequence(NULL, name, type, NULL);
+    /*
+    gen_includes();
     NamespaceGuard ng;
     AST_Sequence* seq = AST_Sequence::narrow_from_decl(type);
     const std::string cxx = scoped(name);
@@ -514,6 +516,7 @@ bool v8_generator::gen_typedef(AST_Typedef*, UTL_ScopedName* name,
         "  }\n";
     }
     break;
+    */
   }
   case AST_Decl::NT_array: {
 
@@ -560,6 +563,7 @@ bool v8_generator::gen_typedef(AST_Typedef*, UTL_ScopedName* name,
     */
   }
   default:
+    gen_includes();
     return true;
   }
   return true;

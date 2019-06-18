@@ -194,11 +194,13 @@ bool itl_generator::gen_typedef(AST_Typedef*, UTL_ScopedName* /*name*/,
                                 AST_Type* base,
                                 const char* repoid)
 {
-  new_type();
 
   switch (base->node_type()) {
   case AST_Decl::NT_sequence:
     {
+      return itl_generator::gen_sequence(NULL, NULL, base, repoid);
+      /*
+      new_type();
       AST_Sequence *seq = AST_Sequence::narrow_from_decl(base);
       be_global->itl_ << Open(this)
                       << Indent(this) << "{\n"
@@ -221,6 +223,7 @@ bool itl_generator::gen_typedef(AST_Typedef*, UTL_ScopedName* /*name*/,
                       << Indent(this) << "}\n"
                       << Close(this);
       break;
+      */
     }
   case AST_Decl::NT_array:
     {
@@ -258,6 +261,7 @@ bool itl_generator::gen_typedef(AST_Typedef*, UTL_ScopedName* /*name*/,
     }
   case AST_Decl::NT_fixed:
     {
+      new_type();
       AST_Fixed* fixed = AST_Fixed::narrow_from_decl(base);
       unsigned digits = fixed->digits()->ev()->u.ulval;
       unsigned scale = fixed->scale()->ev()->u.ulval;
@@ -275,6 +279,7 @@ bool itl_generator::gen_typedef(AST_Typedef*, UTL_ScopedName* /*name*/,
     }
   default:
     {
+      new_type();
       be_global->itl_ << Open(this)
                       << Indent(this) << "{\n"
                       << Open(this)
