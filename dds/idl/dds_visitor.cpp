@@ -282,6 +282,11 @@ dds_visitor::visit_structure(AST_Structure* node)
             visit_array(arr);
           }
           continue; ///just skip over it for now.
+        } else if(nt == AST_Decl::NT_sequence) {
+          AST_Sequence *seq = dynamic_cast<AST_Sequence*>(f[i]->field_type());
+          if(seq) {
+            visit_sequence(seq);
+          }
         }
       }
     } else {
