@@ -13,7 +13,7 @@
 #include <dds/DCPS/WaitSet.h>
 
 #include "Args.h"
-#include "MessengerTypeSupportC.h"
+#include "AnonymousTypeSupportC.h"
 #include "Writer.h"
 
 const int num_instances_per_writer = 1;
@@ -84,8 +84,8 @@ Writer::svc()
     ws->detach_condition(condition);
 
     // Write samples
-    Messenger::StructureDataWriter_var message_dw
-      = Messenger::StructureDataWriter::_narrow(writer_.in());
+    Anonymous::StructureDataWriter_var message_dw
+      = Anonymous::StructureDataWriter::_narrow(writer_.in());
 
     if (CORBA::is_nil(message_dw.in())) {
         ACE_ERROR((LM_ERROR,
@@ -94,15 +94,12 @@ Writer::svc()
         ACE_OS::exit(-1);
     }
 
-    Messenger::Structure message;
-    message.subject_id = 99;
+    Anonymous::Structure message;
+
 
     DDS::InstanceHandle_t handle = message_dw->register_instance(message);
 
-    message.from         = "Comic Book Guy";
-    message.subject      = "Review";
-    message.text         = "Worst. Movie. Ever.";
-    message.count        = 0;
+    message.data({'H','I'});
 
     for (int i = 0; i < num_messages; i++) {
       DDS::ReturnCode_t error;
@@ -116,7 +113,6 @@ Writer::svc()
                    ACE_TEXT(" ERROR: write returned %d!\n"), error));
       }
 
-      message.count++;
     }
 
   } catch (const CORBA::Exception& e) {

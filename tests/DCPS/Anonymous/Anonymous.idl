@@ -8,7 +8,7 @@
 module Anonymous {
   struct Structure {
     char data[8];
-    sequence<string> sentences;
+    //sequence<string> sentences;
   };
 };
 

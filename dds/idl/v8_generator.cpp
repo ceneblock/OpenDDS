@@ -479,88 +479,9 @@ bool v8_generator::gen_typedef(AST_Typedef*, UTL_ScopedName* name,
   switch (type->node_type()) {
   case AST_Decl::NT_sequence: {
     return v8_generator::gen_sequence(NULL, name, type, NULL);
-    /*
-    gen_includes();
-    NamespaceGuard ng;
-    AST_Sequence* seq = AST_Sequence::narrow_from_decl(type);
-    const std::string cxx = scoped(name);
-    AST_Type* elem = seq->base_type();
-    {
-      Function ctv("copyToV8", "v8::Local<v8::Object>");
-      ctv.addArg("src", "const " + cxx + '&');
-      ctv.endArgs();
-      be_global->impl_ <<
-        "  const v8::Local<v8::Array> tgt(Nan::New<v8::Array>(src.length()));\n"
-        "  for (CORBA::ULong i = 0; i < src.length(); ++i) {\n"
-        "  ";
-      gen_copyto("tgt", "src[i]", elem, "i");
-      be_global->impl_ <<
-        "  }\n"
-        "  return tgt;\n";
-    }
-    {
-      Function vtc("copyFromV8", "void");
-      vtc.addArg("src", "const v8::Local<v8::Object>&");
-      vtc.addArg("out", cxx + '&');
-      vtc.endArgs();
-      be_global->impl_ <<
-        "  CORBA::ULong length = 0;\n"
-        "  if (src->IsArray()) {\n"
-        "    length = src->Get(Nan::New(\"length\").ToLocalChecked())->ToObject()->Uint32Value();\n"
-        "  }\n"
-        "  out.length(length);\n"
-        "  for (CORBA::ULong i = 0; i < length; ++i) {\n"
-        "  ";
-      gen_copyfrom("out", "src", elem, "i", true);
-      be_global->impl_ <<
-        "  }\n";
-    }
-    break;
-    */
   }
   case AST_Decl::NT_array: {
-
     return v8_generator::gen_array(NULL, name, type, NULL);
-
-    /*
-    NamespaceGuard ng;
-    AST_Array* array = AST_Array::narrow_from_decl(type);
-    const std::string cxx = scoped(name);
-    AST_Type* elem = array->base_type();
-    {
-      Function ctv("copyToV8", "v8::Local<v8::Object>");
-      ctv.addArg("src", "const " + cxx + '&');
-      ctv.endArgs();
-      be_global->impl_ <<
-        "  CORBA::ULong length = sizeof(src) / sizeof(src[0]);\n"
-        "  const v8::Local<v8::Array> tgt(Nan::New<v8::Array>(length));\n"
-        "  for (CORBA::ULong i = 0; i < length; ++i) {\n"
-        "  ";
-      gen_copyto("tgt", "src[i]", elem, "i");
-      be_global->impl_ <<
-        "  }\n"
-        "  return tgt;\n";
-    }
-    {
-      Function vtc("copyFromV8", "void");
-      vtc.addArg("src", "const v8::Local<v8::Object>&");
-      vtc.addArg("out", cxx + '&');
-      vtc.endArgs();
-      be_global->impl_ <<
-        "  CORBA::ULong length = 0;\n"
-        "  if (src->IsArray()) {\n"
-        "    CORBA::ULong src_length = src->Get(Nan::New(\"length\").ToLocalChecked())->ToObject()->Uint32Value();\n"
-        "    CORBA::ULong out_length = (sizeof(out) / sizeof(out[0]));\n"
-        "    length = (src_length <= out_length) ? src_length : out_length;\n"
-        "  }\n"
-        "  for (CORBA::ULong i = 0; i < length; ++i) {\n"
-        "  ";
-      gen_copyfrom("out", "src", elem, "i", true);
-      be_global->impl_ <<
-        "  }\n";
-    }
-    break;
-    */
   }
   default:
     gen_includes();
@@ -569,7 +490,7 @@ bool v8_generator::gen_typedef(AST_Typedef*, UTL_ScopedName* name,
   return true;
 }
 
-bool v8_generator::gen_array(AST_Array*, UTL_ScopedName* name,
+bool v8_generator::gen_sequence(AST_Sequence*, UTL_ScopedName* name,
                                AST_Type* type, const char* /*repoid*/)
 {
   gen_includes();
@@ -617,7 +538,7 @@ bool v8_generator::gen_array(AST_Array*, UTL_ScopedName* name,
   return true;
 }
 
-bool v8_generator::gen_sequence(AST_Sequence*, UTL_ScopedName* name,
+bool v8_generator::gen_array(AST_Array*, UTL_ScopedName* name,
                                AST_Type* type, const char* /*repoid*/)
 {
   gen_includes();

@@ -1137,15 +1137,12 @@ bool marshal_generator::gen_typedef(AST_Typedef*, UTL_ScopedName* name, AST_Type
 {
   switch (base->node_type()) {
   case AST_Decl::NT_sequence:
-    ::gen_sequence(name, AST_Sequence::narrow_from_decl(base));
-    break;
+    return gen_sequence(NULL, name, base, NULL);
   case AST_Decl::NT_array:
-    ::gen_array(name, AST_Array::narrow_from_decl(base));
-    break;
+    return gen_array(NULL, name, base, NULL);
   default:
     return true;
   }
-  return true;
 }
 
 bool marshal_generator::gen_array(AST_Array*, UTL_ScopedName* name, AST_Type* base,

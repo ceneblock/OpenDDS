@@ -199,65 +199,10 @@ bool itl_generator::gen_typedef(AST_Typedef*, UTL_ScopedName* /*name*/,
   case AST_Decl::NT_sequence:
     {
       return itl_generator::gen_sequence(NULL, NULL, base, repoid);
-      /*
-      new_type();
-      AST_Sequence *seq = AST_Sequence::narrow_from_decl(base);
-      be_global->itl_ << Open(this)
-                      << Indent(this) << "{\n"
-                      << Open(this)
-                      << Indent(this) << "\"kind\" : \"alias\",\n"
-                      << Indent(this) << "\"name\" : \"" << repoid << "\",\n"
-                      << Indent(this) << "\"type\" :\n"
-                      << Open(this)
-                      << Indent(this) << "{\n"
-                      << Open(this)
-                      << Indent(this) << "\"kind\" : \"sequence\",\n";
-      if (!seq->unbounded()) {
-        be_global->itl_ << Indent(this) << "\"capacity\" : " << seq->max_size()->ev()->u.ulval << ",\n";
-      }
-      be_global->itl_ << Indent(this) << "\"type\" : " << InlineType(seq->base_type()) << "\n"
-                      << Close(this)
-                      << Indent(this) << "}\n"
-                      << Close(this)
-                      << Close(this)
-                      << Indent(this) << "}\n"
-                      << Close(this);
-      break;
-      */
     }
   case AST_Decl::NT_array:
     {
       return itl_generator::gen_array(NULL, NULL, base, repoid);
-
-      /**
-      AST_Array* arr = AST_Array::narrow_from_decl(base);
-      be_global->itl_ << Open(this)
-                      << Indent(this) << "{\n"
-                      << Open(this)
-                      << Indent(this) << "\"kind\" : \"alias\",\n"
-                      << Indent(this) << "\"name\" : \"" << repoid << "\",\n"
-                      << Indent(this) << "\"type\" :\n"
-                      << Open(this)
-                      << Indent(this) << "{\n"
-                      << Open(this)
-                      << Indent(this) << "\"kind\" : \"sequence\",\n"
-                      << Indent(this) << "\"type\" : " << InlineType(arr->base_type()) << ",\n"
-                      << Indent(this) << "\"size\" : [";
-      ACE_CDR::ULong dims = arr->n_dims();
-      for (size_t i = 0; i < dims; ++i) {
-        if (i > 0)
-          be_global->itl_ << ", ";
-        be_global->itl_ << arr->dims()[i]->ev()->u.ulval;
-      }
-      be_global->itl_ << "]\n"
-                      << Close(this)
-                      << Indent(this) << "}\n"
-                      << Close(this)
-                      << Close(this)
-                      << Indent(this) << "}\n"
-                      << Close(this);
-      break;
-      */
     }
   case AST_Decl::NT_fixed:
     {

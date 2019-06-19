@@ -1890,7 +1890,9 @@ bool langmap_generator::gen_array(AST_Array*, UTL_ScopedName* name, AST_Type* ba
 
     gen_typecode(name);
   }
-  if (arr) generator_->gen_array_traits(name, arr);
+  if (arr) {
+    generator_->gen_array_traits(name, arr);
+  }
   return true;
 }
 
