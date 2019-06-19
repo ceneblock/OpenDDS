@@ -673,13 +673,27 @@ metaclass_generator::gen_typedef(AST_Typedef*, UTL_ScopedName* name, AST_Type* t
   return true;
 }
 
+/**
+ * @brief generates an array type
+ * @input node the AST_Array type that's already been widdled down
+ * @input name the name of the node
+ * @input type the corresponding AST_Type (useless in when being called directly)
+ * @note if node is NULL, then we assume it's being called from gen_typedef
+ * @return true
+ * @author ceneblock
+ * @TODO trim the fat (useless code)
+ */
 bool
-metaclass_generator::gen_array(AST_Array*, UTL_ScopedName* name, AST_Type* type, const char*)
+metaclass_generator::gen_array(AST_Array* node, UTL_ScopedName* name, AST_Type* type, const char*)
 {
-  AST_Array* arr = AST_Array::narrow_from_decl(type);
+
+  AST_Array* arr = node;
   AST_Sequence* seq = 0;
-  if (!arr && !(seq = AST_Sequence::narrow_from_decl(type))) {
-    return true;
+  if(!node) {
+    arr = AST_Array::narrow_from_decl(type);
+    if (!arr && !(seq = AST_Sequence::narrow_from_decl(type))) {
+      return true;
+    }
   }
   const bool use_cxx11 = be_global->language_mapping() == BE_GlobalData::LANGMAP_CXX11;
 
@@ -760,13 +774,26 @@ metaclass_generator::gen_array(AST_Array*, UTL_ScopedName* name, AST_Type* type,
   return true;
 }
 
+/**
+ * @brief generates a sequence type
+ * @input node the AST_Array type that's already been widdled down
+ * @input name the name of the node
+ * @input type the corresponding AST_Type (useless in when being called directly)
+ * @note if node is NULL, then we assume it's being called from gen_typedef
+ * @return true
+ * @author ceneblock
+ * @TODO trim the fat (useless code)
+ */
 bool
-metaclass_generator::gen_sequence(AST_Sequence*, UTL_ScopedName* name, AST_Type* type, const char*)
+metaclass_generator::gen_sequence(AST_Sequence* node, UTL_ScopedName* name, AST_Type* type, const char*)
 {
-  AST_Array* arr = AST_Array::narrow_from_decl(type);
-  AST_Sequence* seq = 0;
-  if (!arr && !(seq = AST_Sequence::narrow_from_decl(type))) {
-    return true;
+  AST_Array* arr = 0;
+  AST_Sequence* seq = node;
+  if(!node) {
+    arr = AST_Array::narrow_from_decl(type);
+    if (!arr && !(seq = AST_Sequence::narrow_from_decl(type))) {
+      return true;
+    }
   }
   const bool use_cxx11 = be_global->language_mapping() == BE_GlobalData::LANGMAP_CXX11;
 
