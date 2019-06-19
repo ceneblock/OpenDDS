@@ -152,8 +152,33 @@ bool marshal_generator::gen_enum(AST_Enum*, UTL_ScopedName* name,
   return true;
 }
 
-namespace {
 
+
+string getAlignment(AST_Type* elem)
+{
+  if (elem->node_type() == AST_Decl::NT_enum) {
+    return "4";
+  }
+  switch (AST_PredefinedType::narrow_from_decl(elem)->pt()) {
+  case AST_PredefinedType::PT_short:
+  case AST_PredefinedType::PT_ushort:
+    return "2";
+  case AST_PredefinedType::PT_long:
+  case AST_PredefinedType::PT_ulong:
+  case AST_PredefinedType::PT_float:
+    return "4";
+  case AST_PredefinedType::PT_longlong:
+  case AST_PredefinedType::PT_ulonglong:
+  case AST_PredefinedType::PT_double:
+  case AST_PredefinedType::PT_longdouble:
+    return "8";
+  default:
+    return "";
+  }
+}
+
+
+namespace {
   string getMaxSizeExprPrimitive(AST_Type* type)
   {
     if (type->node_type() != AST_Decl::NT_pre_defined) {
@@ -635,29 +660,6 @@ namespace {
     }
   }
 
-  string getAlignment(AST_Type* elem)
-  {
-    if (elem->node_type() == AST_Decl::NT_enum) {
-      return "4";
-    }
-    switch (AST_PredefinedType::narrow_from_decl(elem)->pt()) {
-    case AST_PredefinedType::PT_short:
-    case AST_PredefinedType::PT_ushort:
-      return "2";
-    case AST_PredefinedType::PT_long:
-    case AST_PredefinedType::PT_ulong:
-    case AST_PredefinedType::PT_float:
-      return "4";
-    case AST_PredefinedType::PT_longlong:
-    case AST_PredefinedType::PT_ulonglong:
-    case AST_PredefinedType::PT_double:
-    case AST_PredefinedType::PT_longdouble:
-      return "8";
-    default:
-      return "";
-    }
-  }
-
   void gen_array(UTL_ScopedName* name, AST_Array* arr)
   {
     be_global->add_include("dds/DCPS/Serializer.h");
@@ -1132,6 +1134,9 @@ namespace {
   }
 }
 
+/**
+ * @see bool marshal_generator::gen_array(AST_Array* node, UTL_ScopedName* name, AST_Type* base, const char*)
+ */
 bool marshal_generator::gen_typedef(AST_Typedef*, UTL_ScopedName* name, AST_Type* base,
   const char*)
 {
@@ -1145,28 +1150,54 @@ bool marshal_generator::gen_typedef(AST_Typedef*, UTL_ScopedName* name, AST_Type
   }
 }
 
-bool marshal_generator::gen_array(AST_Array*, UTL_ScopedName* name, AST_Type* base,
+/**
+ * @breif generates the marshaling for the array type
+ * @input node a widdled down array
+ * @input name the scopped name
+ * @input base the AST_Type (useless if called directly)
+ * @return true
+ * @author ceneblock
+ * @note It is assumed that is null when called from gen_typedef
+ */
+bool marshal_generator::gen_array(AST_Array* node, UTL_ScopedName* name, AST_Type* base,
   const char*)
 {
-  switch (base->node_type()) {
-  case AST_Decl::NT_array:
-    ::gen_array(name, AST_Array::narrow_from_decl(base));
-    break;
-  default:
-    return true;
+  if(node) {
+    ::gen_array(name, node);
+  } else {
+    switch (base->node_type()) {
+      case AST_Decl::NT_array:
+        ::gen_array(name, AST_Array::narrow_from_decl(base));
+        break;
+      default:
+        return true;
+    }
   }
   return true;
 }
 
-bool marshal_generator::gen_sequence(AST_Sequence*, UTL_ScopedName* name, AST_Type* base,
+/**
+ * @breif generates the marshaling for the sequence type
+ * @input node a widdled down array
+ * @input name the scopped name
+ * @input base the AST_Type (useless if called directly)
+ * @return true
+ * @author ceneblock
+ * @note It is assumed that is null when called from gen_typedef
+ */
+bool marshal_generator::gen_sequence(AST_Sequence* node, UTL_ScopedName* name, AST_Type* base,
   const char*)
 {
-  switch (base->node_type()) {
-  case AST_Decl::NT_sequence:
-    ::gen_sequence(name, AST_Sequence::narrow_from_decl(base));
-    break;
-  default:
-    return true;
+  if(node) {
+    ::gen_sequence(name, node);
+  } else {
+    switch (base->node_type()) {
+    case AST_Decl::NT_sequence:
+      ::gen_sequence(name, AST_Sequence::narrow_from_decl(base));
+      break;
+    default:
+      return true;
+    }
   }
   return true;
 }

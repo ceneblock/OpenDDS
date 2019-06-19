@@ -270,20 +270,16 @@ dds_visitor::visit_structure(AST_Structure* node)
     node->field(f, i);
 
     if(idl_global -> idl_version_ >= IDL_VERSION_4) {
-
-      //AST_Type *ct = AST_Type::narrow_from_decl (d);
       if(*f) {
         AST_Decl::NodeType nt = f[0] -> field_type()->node_type();
         if(nt == AST_Decl::NT_array) {
-
-
           AST_Array *arr = dynamic_cast<AST_Array*>(f[i]->field_type());
           if(arr) {
             visit_array(arr);
           }
           continue; ///just skip over it for now.
         } else if(nt == AST_Decl::NT_sequence) {
-          AST_Sequence *seq = dynamic_cast<AST_Sequence*>(f[i]->field_type());
+          AST_Sequence *seq = dynamic_cast<AST_Sequence*>(f[0]->field_type());
           if(seq) {
             visit_sequence(seq);
           }

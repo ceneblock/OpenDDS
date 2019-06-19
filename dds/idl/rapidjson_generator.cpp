@@ -479,14 +479,17 @@ bool rapidjson_generator::gen_typedef(AST_Typedef*, UTL_ScopedName* name,
   }
 }
 
-bool rapidjson_generator::gen_array(AST_Array*, UTL_ScopedName* name,
+bool rapidjson_generator::gen_array(AST_Array* node, UTL_ScopedName* name,
                                AST_Type* type, const char* /*repoid*/)
 {
   gen_includes();
   switch (type->node_type()) {
   case AST_Decl::NT_array: {
     NamespaceGuard ng;
-    AST_Array* array = AST_Array::narrow_from_decl(type);
+    AST_Array* array = node;
+    if(!node) {
+      AST_Array::narrow_from_decl(type);
+    }
     const std::string cxx = scoped(name);
     AST_Type* elem = array->base_type();
     {
@@ -536,14 +539,17 @@ bool rapidjson_generator::gen_array(AST_Array*, UTL_ScopedName* name,
   return true;
 }
 
-bool rapidjson_generator::gen_sequence(AST_Sequence*, UTL_ScopedName* name,
+bool rapidjson_generator::gen_sequence(AST_Sequence* node, UTL_ScopedName* name,
                                AST_Type* type, const char* /*repoid*/)
 {
   gen_includes();
   switch (type->node_type()) {
   case AST_Decl::NT_sequence: {
     NamespaceGuard ng;
-    AST_Sequence* seq = AST_Sequence::narrow_from_decl(type);
+    AST_Sequence* seq = node;
+    if(!node) {
+      AST_Sequence::narrow_from_decl(type);
+    }
     const std::string cxx = scoped(name);
     AST_Type* elem = seq->base_type();
     {

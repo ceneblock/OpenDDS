@@ -1863,17 +1863,21 @@ bool langmap_generator::gen_typedef(AST_Typedef*, UTL_ScopedName* name, AST_Type
   return true;
 }
 
-bool langmap_generator::gen_array(AST_Array*, UTL_ScopedName* name, AST_Type* base,
+bool langmap_generator::gen_array(AST_Array* node, UTL_ScopedName* name, AST_Type* base,
                                     const char*)
 {
-  AST_Array* arr = 0;
+  AST_Array* arr = node;
   {
     const ScopedNamespaceGuard namespaces(name, be_global->lang_header_);
     const char* const nm = name->last_component()->get_string();
 
     switch (base->node_type()) {
     case AST_Decl::NT_array:
-      generator_->gen_array(name, arr = AST_Array::narrow_from_decl(base));
+      if(node) {
+        generator_->gen_array(name, node);
+      } else {
+        generator_->gen_array(name, arr = AST_Array::narrow_from_decl(base));
+      }
       break;
     default:
       be_global->lang_header_ <<
@@ -1896,17 +1900,20 @@ bool langmap_generator::gen_array(AST_Array*, UTL_ScopedName* name, AST_Type* ba
   return true;
 }
 
-bool langmap_generator::gen_sequence(AST_Sequence*, UTL_ScopedName* name, AST_Type* base,
+bool langmap_generator::gen_sequence(AST_Sequence* node, UTL_ScopedName* name, AST_Type* base,
                                     const char*)
 {
-  AST_Array* arr = 0;
   {
     const ScopedNamespaceGuard namespaces(name, be_global->lang_header_);
     const char* const nm = name->last_component()->get_string();
 
     switch (base->node_type()) {
     case AST_Decl::NT_sequence:
-      generator_->gen_sequence(name, AST_Sequence::narrow_from_decl(base));
+      if(node) {
+        generator_->gen_sequence(name, node);
+      } else {
+        generator_->gen_sequence(name, AST_Sequence::narrow_from_decl(base));
+      }
       break;
     default:
       be_global->lang_header_ <<
@@ -1923,7 +1930,6 @@ bool langmap_generator::gen_sequence(AST_Sequence*, UTL_ScopedName* name, AST_Ty
 
     gen_typecode(name);
   }
-  if (arr) generator_->gen_array_traits(name, arr);
   return true;
 }
 
